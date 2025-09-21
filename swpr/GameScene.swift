@@ -24,6 +24,7 @@ class GameScene: SKScene {
     private var isGameActive = false
     private var startButton: SKLabelNode?
     private var scoreLabel: SKLabelNode?
+    private var blinkTimer: Timer?
 
     override func didMove(to view: SKView) {
         print("didMove called - setting up scene")
@@ -104,20 +105,46 @@ class GameScene: SKScene {
                 scoreText = "Score: \(difference) (Under target by \(abs(difference)))"
             }
             scoreColor = .systemGreen
-        } else {
-            scoreText = "Score: +\(difference) (Over target by \(difference))"
-            scoreColor = .systemRed
-        }
 
-        scoreLabel?.removeFromParent()
-        scoreLabel = SKLabelNode(text: scoreText)
-        if let scoreLabel = scoreLabel {
-            scoreLabel.fontName = "Arial-BoldMT"
-            scoreLabel.fontSize = 24
-            scoreLabel.fontColor = scoreColor
-            scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
-            addChild(scoreLabel)
+            scoreLabel?.removeFromParent()
+            scoreLabel = SKLabelNode(text: scoreText)
+            if let scoreLabel = scoreLabel {
+                scoreLabel.fontName = "Arial-BoldMT"
+                scoreLabel.fontSize = 24
+                scoreLabel.fontColor = scoreColor
+                scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+                addChild(scoreLabel)
+            }
+        } else {
+            scoreLabel?.removeFromParent()
+            scoreLabel = SKLabelNode(text: "LOOOSE")
+            if let scoreLabel = scoreLabel {
+                scoreLabel.fontName = "Arial-BoldMT"
+                scoreLabel.fontSize = 48
+                scoreLabel.fontColor = .systemRed
+                scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+                addChild(scoreLabel)
+
+                startBlinking()
+            }
         }
+    }
+
+    func startBlinking() {
+        print("startBlinking!!!")
+        if let scoreLabel = scoreLabel {
+            let fadeOut = SKAction.fadeAlpha(to: 0.3, duration: 0.5)
+            let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+            let blinkSequence = SKAction.sequence([fadeOut, fadeIn])
+            let blinkForever = SKAction.repeatForever(blinkSequence)
+            scoreLabel.run(blinkForever, withKey: "blinking")
+            print("Started SpriteKit blinking action")
+        }
+    }
+
+    func stopBlinking() {
+        scoreLabel?.removeAction(forKey: "blinking")
+        scoreLabel?.alpha = 1.0
     }
 
     func showStartButton() {
@@ -137,6 +164,7 @@ class GameScene: SKScene {
         totalSides = 0
         timeRemaining = 30.0
 
+        stopBlinking()
         startButton?.removeFromParent()
         scoreLabel?.removeFromParent()
         updateSumLabel()
