@@ -22,6 +22,7 @@ class GameScene: SKScene {
     private var timerLabel: SKLabelNode?
     private var gameTimer: Timer?
     private var isGameActive = false
+    private var gameEnded = false
     private var startButton: SKLabelNode?
     private var scoreLabel: SKLabelNode?
     private var blinkTimer: Timer?
@@ -124,8 +125,11 @@ class GameScene: SKScene {
                 scoreLabel.fontColor = .systemRed
                 scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
                 addChild(scoreLabel)
+                print("LOOOSE label created and added to scene")
 
-                startBlinking()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.startBlinking()
+                }
             }
         }
     }
@@ -133,12 +137,17 @@ class GameScene: SKScene {
     func startBlinking() {
         print("startBlinking!!!")
         if let scoreLabel = scoreLabel {
-            let fadeOut = SKAction.fadeAlpha(to: 0.3, duration: 0.5)
-            let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+            print("scoreLabel exists, alpha = \(scoreLabel.alpha)")
+            print("scoreLabel parent = \(scoreLabel.parent != nil)")
+
+            let fadeOut = SKAction.fadeAlpha(to: 0.0, duration: 0.3)
+            let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.3)
             let blinkSequence = SKAction.sequence([fadeOut, fadeIn])
             let blinkForever = SKAction.repeatForever(blinkSequence)
             scoreLabel.run(blinkForever, withKey: "blinking")
-            print("Started SpriteKit blinking action")
+            print("Started SpriteKit blinking action on scoreLabel")
+        } else {
+            print("scoreLabel is nil!")
         }
     }
 
@@ -160,6 +169,7 @@ class GameScene: SKScene {
     }
 
     func startGame() {
+        gameEnded = false
         isGameActive = true
         totalSides = 0
         timeRemaining = 30.0
@@ -181,6 +191,8 @@ class GameScene: SKScene {
     }
 
     func endGame() {
+        if gameEnded { return }
+        gameEnded = true
         isGameActive = false
         gameTimer?.invalidate()
         gameTimer = nil
