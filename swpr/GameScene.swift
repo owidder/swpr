@@ -97,8 +97,12 @@ class GameScene: SKScene {
         let scoreText: String
         let scoreColor: UIColor
 
-        if totalSides < targetNumber {
-            scoreText = "Score: \(difference) (Under target by \(abs(difference)))"
+        if totalSides <= targetNumber {
+            if totalSides == targetNumber {
+                scoreText = "Score: \(difference) (Perfect!)"
+            } else {
+                scoreText = "Score: \(difference) (Under target by \(abs(difference)))"
+            }
             scoreColor = .systemGreen
         } else {
             scoreText = "Score: +\(difference) (Over target by \(difference))"
