@@ -11,6 +11,7 @@ import GameplayKit
 class GameScene: SKScene {
 
     private var circle: SKShapeNode?
+    private var cornerCircles: [SKShapeNode] = []
     private var touchStartPoint: CGPoint?
     private var isCircleActive = false
     private var totalSides = 0
@@ -197,6 +198,7 @@ class GameScene: SKScene {
         gameTimer?.invalidate()
         gameTimer = nil
         circle?.removeFromParent()
+        removeCornerCircles()
         backgroundColor = .gray
         showScore()
         showStartButton()
@@ -209,21 +211,25 @@ class GameScene: SKScene {
     func spawnNewCircle() {
         if !isGameActive { return }
         circle?.removeFromParent()
+        removeCornerCircles()
 
         let size: CGFloat = size.width * 0.8
         let sides = Int.random(in: 3...9)
         let path = CGMutablePath()
         let radius = size * 0.4
+        var vertices: [CGPoint] = []
 
         for i in 0..<sides {
             let angle = (CGFloat(i) * 2.0 * CGFloat.pi) / CGFloat(sides) - CGFloat.pi / 2
             let x = radius * cos(angle)
             let y = radius * sin(angle)
+            let vertex = CGPoint(x: x, y: y)
+            vertices.append(vertex)
 
             if i == 0 {
-                path.move(to: CGPoint(x: x, y: y))
+                path.move(to: vertex)
             } else {
-                path.addLine(to: CGPoint(x: x, y: y))
+                path.addLine(to: vertex)
             }
         }
         path.closeSubpath()
@@ -264,9 +270,36 @@ class GameScene: SKScene {
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
                 self.isCircleActive = true
+                self.createCornerCircles(vertices: vertices, at: circle.position)
                 print("Circle is now active and ready for swiping")
             }
         }
+    }
+
+    func createCornerCircles(vertices: [CGPoint], at position: CGPoint) {
+        for vertex in vertices {
+            let cornerCircle = SKShapeNode(circleOfRadius: 8)
+            cornerCircle.fillColor = .yellow
+            cornerCircle.strokeColor = .orange
+            cornerCircle.lineWidth = 2
+            cornerCircle.position = CGPoint(x: position.x + vertex.x, y: position.y + vertex.y)
+            cornerCircle.setScale(0.0)
+            cornerCircle.alpha = 0.0
+            addChild(cornerCircle)
+            cornerCircles.append(cornerCircle)
+
+            let scaleAction = SKAction.scale(to: 1.0, duration: 0.6)
+            let fadeAction = SKAction.fadeIn(withDuration: 0.4)
+            let animationGroup = SKAction.group([scaleAction, fadeAction])
+            cornerCircle.run(animationGroup)
+        }
+    }
+
+    func removeCornerCircles() {
+        for cornerCircle in cornerCircles {
+            cornerCircle.removeFromParent()
+        }
+        cornerCircles.removeAll()
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
