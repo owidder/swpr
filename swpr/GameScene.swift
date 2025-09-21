@@ -214,7 +214,7 @@ class GameScene: SKScene {
         removeCornerCircles()
 
         let size: CGFloat = size.width * 0.8
-        let sides = Int.random(in: 3...9)
+        let sides = Int.random(in: 3...20)
         let path = CGMutablePath()
         let radius = size * 0.4
         var vertices: [CGPoint] = []
