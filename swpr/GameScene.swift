@@ -16,13 +16,28 @@ class GameScene: SKScene {
     private var totalSides = 0
     private var currentPolygonSides = 0
     private var sumLabel: SKLabelNode?
+    private var targetNumber = 0
+    private var targetLabel: SKLabelNode?
 
     override func didMove(to view: SKView) {
         print("didMove called - setting up scene")
-        backgroundColor = .black
+        targetNumber = Int.random(in: 30...100)
+        updateBackgroundColor()
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
+        setupTargetLabel()
         setupSumLabel()
         spawnNewCircle()
+    }
+
+    func setupTargetLabel() {
+        targetLabel = SKLabelNode(text: "Target: \(targetNumber)")
+        if let targetLabel = targetLabel {
+            targetLabel.fontName = "Arial-BoldMT"
+            targetLabel.fontSize = 28
+            targetLabel.fontColor = .white
+            targetLabel.position = CGPoint(x: size.width / 2, y: size.height - 80)
+            addChild(targetLabel)
+        }
     }
 
     func setupSumLabel() {
@@ -38,6 +53,15 @@ class GameScene: SKScene {
 
     func updateSumLabel() {
         sumLabel?.text = "Total Sides: \(totalSides)"
+        updateBackgroundColor()
+    }
+
+    func updateBackgroundColor() {
+        if totalSides < targetNumber {
+            backgroundColor = .systemGreen
+        } else {
+            backgroundColor = .systemRed
+        }
     }
 
     func spawnNewCircle() {
