@@ -85,7 +85,7 @@ class GameScene: SKScene {
             backgroundColor = .gray
             return
         }
-        if totalSides < targetNumber {
+        if totalSides <= targetNumber {
             backgroundColor = .systemGreen
         } else {
             backgroundColor = .systemRed
