@@ -23,6 +23,7 @@ class GameScene: SKScene {
     private var gameTimer: Timer?
     private var isGameActive = false
     private var startButton: SKLabelNode?
+    private var scoreLabel: SKLabelNode?
 
     override func didMove(to view: SKView) {
         print("didMove called - setting up scene")
@@ -91,6 +92,30 @@ class GameScene: SKScene {
         }
     }
 
+    func showScore() {
+        let difference = totalSides - targetNumber
+        let scoreText: String
+        let scoreColor: UIColor
+
+        if totalSides < targetNumber {
+            scoreText = "Score: \(difference) (Under target by \(abs(difference)))"
+            scoreColor = .systemGreen
+        } else {
+            scoreText = "Score: +\(difference) (Over target by \(difference))"
+            scoreColor = .systemRed
+        }
+
+        scoreLabel?.removeFromParent()
+        scoreLabel = SKLabelNode(text: scoreText)
+        if let scoreLabel = scoreLabel {
+            scoreLabel.fontName = "Arial-BoldMT"
+            scoreLabel.fontSize = 24
+            scoreLabel.fontColor = scoreColor
+            scoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+            addChild(scoreLabel)
+        }
+    }
+
     func showStartButton() {
         startButton?.removeFromParent()
         startButton = SKLabelNode(text: "START GAME")
@@ -98,7 +123,7 @@ class GameScene: SKScene {
             startButton.fontName = "Arial-BoldMT"
             startButton.fontSize = 32
             startButton.fontColor = .white
-            startButton.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            startButton.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
             addChild(startButton)
         }
     }
@@ -109,6 +134,7 @@ class GameScene: SKScene {
         timeRemaining = 30.0
 
         startButton?.removeFromParent()
+        scoreLabel?.removeFromParent()
         updateSumLabel()
         updateTimerLabel()
         spawnNewCircle()
@@ -128,6 +154,7 @@ class GameScene: SKScene {
         gameTimer = nil
         circle?.removeFromParent()
         backgroundColor = .gray
+        showScore()
         showStartButton()
     }
 
