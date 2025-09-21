@@ -9,80 +9,170 @@ import SpriteKit
 import GameplayKit
 
 class GameScene: SKScene {
-    
-    private var label : SKLabelNode?
-    private var spinnyNode : SKShapeNode?
-    
+
+    private var circle: SKShapeNode?
+    private var touchStartPoint: CGPoint?
+    private var isCircleActive = false
+    private var totalSides = 0
+    private var currentPolygonSides = 0
+    private var sumLabel: SKLabelNode?
+
     override func didMove(to view: SKView) {
-        
-        // Get label node from scene and store it for use later
-        self.label = self.childNode(withName: "//helloLabel") as? SKLabelNode
-        if let label = self.label {
-            label.alpha = 0.0
-            label.run(SKAction.fadeIn(withDuration: 2.0))
-        }
-        
-        // Create shape node to use during mouse interaction
-        let w = (self.size.width + self.size.height) * 0.05
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3)
-        
-        if let spinnyNode = self.spinnyNode {
-            spinnyNode.lineWidth = 2.5
-            
-            spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1)))
-            spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-                                              SKAction.fadeOut(withDuration: 0.5),
-                                              SKAction.removeFromParent()]))
+        print("didMove called - setting up scene")
+        backgroundColor = .black
+        physicsWorld.gravity = CGVector(dx: 0, dy: 0)
+        setupSumLabel()
+        spawnNewCircle()
+    }
+
+    func setupSumLabel() {
+        sumLabel = SKLabelNode(text: "Total Sides: 0")
+        if let sumLabel = sumLabel {
+            sumLabel.fontName = "Arial-BoldMT"
+            sumLabel.fontSize = 24
+            sumLabel.fontColor = .white
+            sumLabel.position = CGPoint(x: size.width / 2, y: 50)
+            addChild(sumLabel)
         }
     }
-    
-    
-    func touchDown(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.green
-            self.addChild(n)
+
+    func updateSumLabel() {
+        sumLabel?.text = "Total Sides: \(totalSides)"
+    }
+
+    func spawnNewCircle() {
+        circle?.removeFromParent()
+
+        let size: CGFloat = size.width * 0.8
+        let sides = Int.random(in: 3...9)
+        let path = CGMutablePath()
+        let radius = size * 0.4
+
+        for i in 0..<sides {
+            let angle = (CGFloat(i) * 2.0 * CGFloat.pi) / CGFloat(sides) - CGFloat.pi / 2
+            let x = radius * cos(angle)
+            let y = radius * sin(angle)
+
+            if i == 0 {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        path.closeSubpath()
+
+        circle = SKShapeNode(path: path)
+
+        if let circle = circle {
+            circle.fillColor = .systemBlue
+            circle.strokeColor = .white
+            circle.lineWidth = 3
+
+            circle.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
+            circle.setScale(0.0)
+            circle.alpha = 0.0
+
+            circle.physicsBody = SKPhysicsBody(polygonFrom: path)
+
+            circle.physicsBody?.mass = 1.0
+            circle.physicsBody?.linearDamping = 0.8
+            circle.physicsBody?.angularDamping = 0.5
+            circle.physicsBody?.affectedByGravity = false
+
+            addChild(circle)
+
+            let scaleAction = SKAction.scale(to: 1.0, duration: 0.6)
+            scaleAction.timingMode = .easeOut
+
+            let fadeAction = SKAction.fadeIn(withDuration: 0.4)
+
+            let rotateAction = SKAction.rotate(byAngle: CGFloat.pi * 2, duration: 0.6)
+
+            let animationGroup = SKAction.group([scaleAction, fadeAction, rotateAction])
+
+            currentPolygonSides = sides
+            print("Spawned polygon with \(sides) sides")
+
+            circle.run(animationGroup)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                self.isCircleActive = true
+                print("Circle is now active and ready for swiping")
+            }
         }
     }
-    
-    func touchMoved(toPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.blue
-            self.addChild(n)
-        }
-    }
-    
-    func touchUp(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.red
-            self.addChild(n)
-        }
-    }
-    
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
-        
-        for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+        guard let touch = touches.first, isCircleActive else { return }
+        touchStartPoint = touch.location(in: self)
     }
-    
+
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
+        guard let touch = touches.first,
+              let startPoint = touchStartPoint,
+              isCircleActive,
+              let circle = circle else { return }
+
+        let currentPoint = touch.location(in: self)
+        let deltaX = currentPoint.x - startPoint.x
+        let deltaY = currentPoint.y - startPoint.y
+
+        let dragForce = CGVector(dx: deltaX * 15, dy: deltaY * 15)
+        circle.physicsBody?.applyForce(dragForce)
     }
-    
+
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
+        guard let touch = touches.first,
+              let startPoint = touchStartPoint,
+              isCircleActive,
+              let circle = circle else { return }
+
+        let endPoint = touch.location(in: self)
+        let deltaX = endPoint.x - startPoint.x
+        let deltaY = endPoint.y - startPoint.y
+        let swipeThreshold: CGFloat = 100
+
+        let swipeDistance = sqrt(deltaX * deltaX + deltaY * deltaY)
+
+        if swipeDistance > swipeThreshold {
+            let swipeDirection = CGVector(dx: deltaX, dy: deltaY)
+            let normalizedDirection = CGVector(
+                dx: swipeDirection.dx / swipeDistance,
+                dy: swipeDirection.dy / swipeDistance
+            )
+
+            let swipeForce = CGVector(
+                dx: normalizedDirection.dx * 800,
+                dy: normalizedDirection.dy * 800
+            )
+
+            circle.physicsBody?.applyImpulse(swipeForce)
+        }
+
+        touchStartPoint = nil
     }
-    
+
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
+        touchStartPoint = nil
     }
-    
-    
+
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+        if let circle = circle {
+            let circlePosition = circle.position
+
+            let leftBoundary = -10.0
+            let rightBoundary = size.width + 10.0
+
+            if circlePosition.x < leftBoundary || circlePosition.x > rightBoundary {
+                print("Polygon is off-screen at position \(circlePosition.x), isCircleActive: \(isCircleActive)")
+                if isCircleActive {
+                    isCircleActive = false
+                    totalSides += currentPolygonSides
+                    print("Added \(currentPolygonSides) sides. Total now: \(totalSides)")
+                    updateSumLabel()
+                    spawnNewCircle()
+                }
+            }
+        }
     }
 }
