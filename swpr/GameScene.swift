@@ -18,18 +18,29 @@ class GameScene: SKScene {
     private var sumLabel: SKLabelNode?
     private var targetNumber = 0
     private var targetLabel: SKLabelNode?
+    private var timeRemaining = 30.0
+    private var timerLabel: SKLabelNode?
+    private var gameTimer: Timer?
+    private var isGameActive = false
+    private var startButton: SKLabelNode?
 
     override func didMove(to view: SKView) {
         print("didMove called - setting up scene")
-        targetNumber = Int.random(in: 30...100)
-        updateBackgroundColor()
+        backgroundColor = .gray
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
+        setupUI()
+        showStartButton()
+    }
+
+    func setupUI() {
+        targetNumber = Int.random(in: 30...100)
         setupTargetLabel()
+        setupTimerLabel()
         setupSumLabel()
-        spawnNewCircle()
     }
 
     func setupTargetLabel() {
+        targetLabel?.removeFromParent()
         targetLabel = SKLabelNode(text: "Target: \(targetNumber)")
         if let targetLabel = targetLabel {
             targetLabel.fontName = "Arial-BoldMT"
@@ -37,6 +48,18 @@ class GameScene: SKScene {
             targetLabel.fontColor = .white
             targetLabel.position = CGPoint(x: size.width / 2, y: size.height - 80)
             addChild(targetLabel)
+        }
+    }
+
+    func setupTimerLabel() {
+        timerLabel?.removeFromParent()
+        timerLabel = SKLabelNode(text: "Time: 30")
+        if let timerLabel = timerLabel {
+            timerLabel.fontName = "Arial-BoldMT"
+            timerLabel.fontSize = 24
+            timerLabel.fontColor = .white
+            timerLabel.position = CGPoint(x: size.width / 2, y: size.height - 120)
+            addChild(timerLabel)
         }
     }
 
@@ -57,6 +80,10 @@ class GameScene: SKScene {
     }
 
     func updateBackgroundColor() {
+        if !isGameActive {
+            backgroundColor = .gray
+            return
+        }
         if totalSides < targetNumber {
             backgroundColor = .systemGreen
         } else {
@@ -64,7 +91,52 @@ class GameScene: SKScene {
         }
     }
 
+    func showStartButton() {
+        startButton?.removeFromParent()
+        startButton = SKLabelNode(text: "START GAME")
+        if let startButton = startButton {
+            startButton.fontName = "Arial-BoldMT"
+            startButton.fontSize = 32
+            startButton.fontColor = .white
+            startButton.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            addChild(startButton)
+        }
+    }
+
+    func startGame() {
+        isGameActive = true
+        totalSides = 0
+        timeRemaining = 30.0
+
+        startButton?.removeFromParent()
+        updateSumLabel()
+        updateTimerLabel()
+        spawnNewCircle()
+
+        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            self.timeRemaining -= 1.0
+            self.updateTimerLabel()
+            if self.timeRemaining <= 0 {
+                self.endGame()
+            }
+        }
+    }
+
+    func endGame() {
+        isGameActive = false
+        gameTimer?.invalidate()
+        gameTimer = nil
+        circle?.removeFromParent()
+        backgroundColor = .gray
+        showStartButton()
+    }
+
+    func updateTimerLabel() {
+        timerLabel?.text = "Time: \(Int(timeRemaining))"
+    }
+
     func spawnNewCircle() {
+        if !isGameActive { return }
         circle?.removeFromParent()
 
         let size: CGFloat = size.width * 0.8
@@ -127,12 +199,21 @@ class GameScene: SKScene {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, isCircleActive else { return }
-        touchStartPoint = touch.location(in: self)
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+
+        if !isGameActive, let startButton = startButton, startButton.contains(location) {
+            startGame()
+            return
+        }
+
+        guard isCircleActive else { return }
+        touchStartPoint = location
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first,
+        guard isGameActive,
+              let touch = touches.first,
               let startPoint = touchStartPoint,
               isCircleActive,
               let circle = circle else { return }
@@ -146,7 +227,8 @@ class GameScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first,
+        guard isGameActive,
+              let touch = touches.first,
               let startPoint = touchStartPoint,
               isCircleActive,
               let circle = circle else { return }
