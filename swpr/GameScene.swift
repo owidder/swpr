@@ -268,8 +268,15 @@ class GameScene: SKScene {
 
             let leftBoundary = -10.0
             let rightBoundary = size.width + 10.0
+            let topBoundary = size.height + 10.0
+            let bottomBoundary = -10.0
 
-            if circlePosition.x < leftBoundary {
+            if circlePosition.y > topBoundary || circlePosition.y < bottomBoundary {
+                print("Polygon swiped UP/DOWN - Game Over!")
+                if isCircleActive {
+                    endGame()
+                }
+            } else if circlePosition.x < leftBoundary {
                 print("Polygon swiped LEFT at position \(circlePosition.x), isCircleActive: \(isCircleActive)")
                 if isCircleActive {
                     isCircleActive = false
