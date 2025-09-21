@@ -163,12 +163,21 @@ class GameScene: SKScene {
             let leftBoundary = -10.0
             let rightBoundary = size.width + 10.0
 
-            if circlePosition.x < leftBoundary || circlePosition.x > rightBoundary {
-                print("Polygon is off-screen at position \(circlePosition.x), isCircleActive: \(isCircleActive)")
+            if circlePosition.x < leftBoundary {
+                print("Polygon swiped LEFT at position \(circlePosition.x), isCircleActive: \(isCircleActive)")
                 if isCircleActive {
                     isCircleActive = false
                     totalSides += currentPolygonSides
                     print("Added \(currentPolygonSides) sides. Total now: \(totalSides)")
+                    updateSumLabel()
+                    spawnNewCircle()
+                }
+            } else if circlePosition.x > rightBoundary {
+                print("Polygon swiped RIGHT at position \(circlePosition.x), isCircleActive: \(isCircleActive)")
+                if isCircleActive {
+                    isCircleActive = false
+                    totalSides -= currentPolygonSides
+                    print("Subtracted \(currentPolygonSides) sides. Total now: \(totalSides)")
                     updateSumLabel()
                     spawnNewCircle()
                 }
